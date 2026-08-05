@@ -104,7 +104,7 @@ fn sticky_pressed_keycodes(
 fn sticky_tap_dance_index(keycode: u16) -> Option<usize> {
     (0x5700..=0x57FF)
         .contains(&keycode)
-        .then_some((keycode - 0x5700) as usize)
+        .then(|| (keycode - 0x5700) as usize)
 }
 
 fn sticky_tap_dance_term(
@@ -535,6 +535,11 @@ mod tests {
             lighting_mode: None,
             firmware: FirmwareProtocol::Vial,
         }
+    }
+
+    #[test]
+    fn non_tap_dance_keycode_has_no_sticky_tap_dance_index() {
+        assert_eq!(sticky_tap_dance_index(0x0004), None);
     }
 
     #[test]
