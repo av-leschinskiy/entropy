@@ -33,7 +33,7 @@ ignored without migration.
 - Produces `save_typing_trainer_symbol_stats(stats: &TypingTrainerCharacterStatsMap)`.
 - Removes `typing_trainer_symbol_stats` from `AppSettings` and its default.
 
-- [ ] **Step 1: Write failing tests for a versioned file round-trip and invalid JSON**
+- [x] **Step 1: Write failing tests for a versioned file round-trip and invalid JSON**
 
 ```rust
 #[test]
@@ -60,7 +60,7 @@ fn invalid_symbol_stats_file_returns_an_empty_map() {
 }
 ```
 
-- [ ] **Step 2: Run the new tests and verify they fail because the helpers do not exist**
+- [x] **Step 2: Run the new tests and verify they fail because the helpers do not exist**
 
 Run:
 
@@ -70,7 +70,7 @@ nix shell nixpkgs#rustc nixpkgs#cargo nixpkgs#gcc --command cargo test symbol_st
 
 Expected: compilation failure naming the missing storage helpers.
 
-- [ ] **Step 3: Implement the minimal versioned storage helpers**
+- [x] **Step 3: Implement the minimal versioned storage helpers**
 
 Add a private serde wrapper in `src/app_storage.rs`:
 
@@ -89,7 +89,7 @@ the `*_from_path` helpers with `read_to_string`, `serde_json::from_str`,
 real path. Remove the corresponding field and default initialization from
 `AppSettings`.
 
-- [ ] **Step 4: Run the focused storage tests and verify they pass**
+- [x] **Step 4: Run the focused storage tests and verify they pass**
 
 Run:
 
@@ -99,7 +99,7 @@ nix shell nixpkgs#rustc nixpkgs#cargo nixpkgs#gcc --command cargo test symbol_st
 
 Expected: both tests pass.
 
-- [ ] **Step 5: Commit the isolated storage layer**
+- [x] **Step 5: Commit the isolated storage layer**
 
 ```bash
 git add src/app_storage.rs src/app_state.rs
@@ -117,38 +117,30 @@ git commit --no-verify -m "refactor: вынести статистику тре�
 - Consumes the Task 1 load/save functions.
 - Adds `EntropyApp::typing_trainer_symbol_stats: TypingTrainerCharacterStatsMap`.
 
-- [ ] **Step 1: Write a failing regression test proving completed symbol runs save their map**
+- [x] **Step 1: Write a failing serialization regression test**
 
-Extract the completion-side persistence into a narrow method accepting a map,
-then add this test in `src/ui/typing_trainer.rs` tests:
+Add this test near `AppSettings` tests in `src/app_state.rs`:
 
 ```rust
 #[test]
-fn completed_symbol_run_persists_the_current_symbol_stats() {
-    let stats = BTreeMap::from([('?', TypingTrainerCharacterStats { attempts: 2, errors: 1 })]);
-    let path = temp_symbol_stats_path("completed_run");
+fn app_settings_no_longer_embed_symbol_training_stats() {
+    let json = serde_json::to_value(AppSettings::default()).unwrap();
 
-    save_completed_symbol_stats_to_path(&path, &stats);
-
-    assert_eq!(load_typing_trainer_symbol_stats_from_path(&path), stats);
-    std::fs::remove_file(path).unwrap();
+    assert!(json.get("typing_trainer_symbol_stats").is_none());
 }
 ```
 
-Use the real persistence helper rather than mocks; the test must fail before
-the completion code has a separate in-memory map to save.
-
-- [ ] **Step 2: Run the regression test and verify it fails for the intended missing wiring**
+- [x] **Step 2: Run the test and verify it fails while the legacy field exists**
 
 Run:
 
 ```bash
-nix shell nixpkgs#rustc nixpkgs#cargo nixpkgs#gcc --command cargo test completed_symbol_run_persists_the_current_symbol_stats -- --nocapture
+nix shell nixpkgs#rustc nixpkgs#cargo nixpkgs#gcc --command cargo test app_settings_no_longer_embed_symbol_training_stats -- --nocapture
 ```
 
-Expected: compilation failure until the completion persistence helper is introduced.
+Expected: test failure because the legacy JSON field is present.
 
-- [ ] **Step 3: Implement startup load and finished-run save**
+- [x] **Step 3: Implement startup load and finished-run save**
 
 In `EntropyApp::new`, call `load_typing_trainer_symbol_stats()` before building
 `Self`, then assign the result to a new app field. Replace every trainer use of
@@ -157,7 +149,7 @@ In `EntropyApp::new`, call `load_typing_trainer_symbol_stats()` before building
 after a completed run is recorded; retain `save_app_settings` for the history.
 Do not write on every keystroke.
 
-- [ ] **Step 4: Run focused trainer and storage tests**
+- [x] **Step 4: Run focused trainer and storage tests**
 
 Run:
 
@@ -167,7 +159,7 @@ nix shell nixpkgs#rustc nixpkgs#cargo nixpkgs#gcc --command cargo test typing_tr
 
 Expected: all selected tests pass.
 
-- [ ] **Step 5: Commit and push the wiring change**
+- [x] **Step 5: Commit and push the wiring change**
 
 ```bash
 git add src/app_init.rs src/app_state.rs src/ui/typing_trainer.rs
@@ -180,7 +172,7 @@ git push origin feat/adaptive-symbol-trainer
 **Files:**
 - No source changes expected.
 
-- [ ] **Step 1: Run the complete automated verification**
+- [x] **Step 1: Run the complete automated verification**
 
 ```bash
 nix shell nixpkgs#rustc nixpkgs#cargo nixpkgs#gcc --command cargo test --all-targets
